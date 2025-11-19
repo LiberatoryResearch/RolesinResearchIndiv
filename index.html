@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover Your Role in Research - Interactive Quiz (Multi-Select)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #2c7873 0%, #1a5653 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c7873 0%, #1a5653 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .author {
+            font-size: 0.9em;
+            margin-top: 15px;
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+            line-height: 1.7;
+            color: #333;
+        }
+
+        .intro strong {
+            color: #2c7873;
+        }
+
+        .question-container {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .question-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2c7873;
+        }
+
+        .question h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .question-instruction {
+            color: #7d4e8d;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f5edf7;
+            border-radius: 6px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .option:hover {
+            border-color: #2c7873;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(44, 120, 115, 0.15);
+        }
+
+        .option.selected {
+            background: linear-gradient(135deg, #7d4e8d 0%, #5a3d6b 100%);
+            color: white;
+            border-color: #7d4e8d;
+        }
+
+        .option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .option.disabled:hover {
+            transform: none;
+            border-color: #e0e0e0;
+            box-shadow: none;
+        }
+
+        .option input[type="checkbox"] {
+            margin-right: 12px;
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .option.disabled input[type="checkbox"] {
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #2c7873 0%, #1a5653 100%);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .selection-count {
+            text-align: center;
+            color: #7d4e8d;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2c7873 0%, #1a5653 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(44, 120, 115, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .visual-results-container {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .visual-results-container h3 {
+            margin-bottom: 25px;
+            color: #2c7873;
+        }
+
+        #rolesCanvas {
+            max-width: 500px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .canvas-subtitle {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .role-result {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+
+        .role-result.extractive {
+            border-left-color: #9b6b8f;
+        }
+
+        .role-result.liberatory {
+            border-left-color: #2c7873;
+        }
+
+        .role-result.primary {
+            border-left-width: 8px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .role-result h3 {
+            margin-bottom: 12px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-badge.primary {
+            background: #2c7873;
+            color: white;
+        }
+
+        .role-badge.secondary {
+            background: #7d4e8d;
+            color: white;
+        }
+
+        .role-result .score {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .role-result p {
+            line-height: 1.7;
+            color: #555;
+        }
+
+        .spectrum-chart {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .spectrum-visual {
+            display: flex;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .spectrum-extractive {
+            background: linear-gradient(90deg, #9b6b8f, #8a5880);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .spectrum-liberatory {
+            background: linear-gradient(90deg, #2c7873, #1a5653);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .reflection {
+            background: #f5edf7;
+            border-left: 4px solid #7d4e8d;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .reflection h4 {
+            color: #6d5668;
+            margin-bottom: 12px;
+        }
+
+        .reflection ul {
+            margin-left: 20px;
+            color: #6d5668;
+        }
+
+        .reflection li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .start-screen {
+            text-align: center;
+        }
+
+        .start-screen button {
+            margin-top: 30px;
+            padding: 20px 50px;
+            font-size: 1.2em;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #7d4e8d 0%, #5a3d6b 100%);
+            color: white;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212, 165, 116, 0.3);
+        }
+
+        .download-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: #f5edf7;
+            border-radius: 12px;
+            border: 2px solid #7d4e8d;
+        }
+
+        .download-section h4 {
+            color: #6d5668;
+            margin-bottom: 15px;
+        }
+
+        .download-section p {
+            color: #6d5668;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .multi-select-note {
+            background: #f5edf7;
+            border: 2px solid #7d4e8d;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .multi-select-note h4 {
+            color: #6d5668;
+            margin-bottom: 10px;
+        }
+
+        .multi-select-note p {
+            color: #6d5668;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Discover Your Role in Research</h1>
+            <p>A Critical Examination of Extractive vs. Liberatory Approaches</p>
+            <div class="author">By Dr. Zuri Tau | LiberatoryResearch.org</div>
+        </div>
+
+        <div class="content">
+            <div id="start-screen" class="start-screen">
+                <div class="intro">
+                    <p><strong>Welcome!</strong> This quiz is designed to help you reflect on your approach to research and evaluation. Based on Dr. Zuri Tau's framework examining researcher roles on a spectrum from extractive to liberatory practices.</p>
+                    
+                    <p style="margin-top: 20px;"><strong>How to take this quiz:</strong> For each question, you can select up to TWO answers that resonate with you. Choose the responses that feel most true to your current practice. There are no "right" or "wrong" answers—trust your instinct and be honest with yourself. This is a tool for reflection and growth.</p>
+                </div>
+
+                <div class="multi-select-note">
+                    <h4>Deepen Your Practice</h4>
+                    <p>Want to learn more about liberatory research and these roles? Join us for online classes and webinars where we explore how to move toward more equitable, community-centered research practices. Visit <strong>www.liberatoryresearch.org</strong> to learn more and connect with a community of practitioners committed to this work.</p>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 25px; background: #f8f9fa; border-radius: 12px; border: 2px solid #2c7873;">
+                    <label for="userName" style="display: block; font-weight: 600; color: #2c7873; margin-bottom: 10px; font-size: 1.1em;">
+                        Your Name (Optional)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="userName" 
+                        placeholder="Enter your name..."
+                        style="width: 100%; padding: 12px; border: 2px solid #d0d0d0; border-radius: 8px; font-size: 1em; font-family: inherit;"
+                        onkeypress="if(event.key === 'Enter') startQuiz()"
+                    >
+                    <p style="margin-top: 8px; font-size: 0.85em; color: #666;">
+                        Personalize your results by entering your name. This will appear in your charts and report.
+                    </p>
+                </div>
+                
+                <button class="btn-primary" onclick="startQuiz()" style="margin-top: 20px;">Begin Your Journey</button>
+            </div>
+
+            <div id="quiz-content" style="display: none;">
+                <div class="progress-text">
+                    <span id="current-question">1</span> of <span id="total-questions">12</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
+                <div class="selection-count" id="selection-count">Select 1-2 options that resonate with you</div>
+
+                <div id="questions"></div>
+
+                <div class="buttons">
+                    <button class="btn-secondary" id="prev-btn" onclick="previousQuestion()" disabled>← Previous</button>
+                    <button class="btn-primary" id="next-btn" onclick="nextQuestion()" disabled>Next →</button>
+                    <button class="btn-primary" id="submit-btn" onclick="calculateResults()" style="display: none;">See My Results</button>
+                </div>
+            </div>
+
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "When you engage research participants, how do you approach relationship-building?",
+                options: [
+                    { text: "I focus on building rapport primarily to facilitate data collection", value: { communityDrain: 2, detachedObserver: 1 } },
+                    { text: "I establish basic professional relationships to maintain objectivity", value: { detachedObserver: 2, authority: 1 } },
+                    { text: "I invest time in authentic relationship-building, even beyond project needs", value: { compassionateWitness: 2, communityServant: 1 } },
+                    { text: "I prioritize learning from participants and centering their leadership", value: { learner: 2, accomplice: 1 } }
+                ]
+            },
+            {
+                id: 2,
+                text: "How do you view your academic credentials and expertise in relation to research participants?",
+                options: [
+                    { text: "My degree and training make me the expert who should be trusted and respected", value: { expert: 3, authority: 2 } },
+                    { text: "I have specialized knowledge, but participants have lived experience—both are valuable", value: { learner: 1, compassionateWitness: 1 } },
+                    { text: "Participants are the true experts of their own experiences; I'm here to learn", value: { learner: 3, communityServant: 1 } },
+                    { text: "My credentials give me access, but I recognize the false division between academic and community knowledge", value: { accomplice: 2, learner: 2 } }
+                ]
+            },
+            {
+                id: 3,
+                text: "What happens after your data collection ends?",
+                options: [
+                    { text: "I move on to analysis and writing; the community may not hear from me again", value: { communityDrain: 3, detachedObserver: 1 } },
+                    { text: "I provide a final report but don't typically maintain ongoing connection", value: { communityDrain: 2, detachedObserver: 2 } },
+                    { text: "I share findings in accessible ways and remain available for questions", value: { compassionateWitness: 2, communityServant: 1 } },
+                    { text: "I ensure participants benefit from the research and maintain long-term relationships", value: { communityServant: 3, accomplice: 2 } }
+                ]
+            },
+            {
+                id: 4,
+                text: "When you encounter something concerning or harmful during your research, how do you respond?",
+                options: [
+                    { text: "I maintain my role as observer and don't intervene to preserve data integrity", value: { detachedObserver: 3, authority: 1 } },
+                    { text: "I document what I see but feel conflicted about not intervening", value: { detachedObserver: 2, compassionateWitness: 1 } },
+                    { text: "I find ways to share resources or support while maintaining research boundaries", value: { compassionateWitness: 2, communityServant: 1 } },
+                    { text: "I intervene or connect people with support, and advocate for providing these resources to all participants as needed", value: { accomplice: 3, compassionateWitness: 1 } }
+                ]
+            },
+            {
+                id: 5,
+                text: "How do you approach research questions and methodologies?",
+                options: [
+                    { text: "I design questions based on my expertise and what will advance my research agenda", value: { expert: 2, authority: 2, communityDrain: 1 } },
+                    { text: "I follow established protocols and proven methodologies in my field", value: { expert: 2, detachedObserver: 2 } },
+                    { text: "I invite participant input on questions while maintaining methodological rigor", value: { learner: 2, compassionateWitness: 1 } },
+                    { text: "I co-create research questions and methods with participants from the start", value: { accomplice: 3, learner: 2, communityServant: 1 } }
+                ]
+            },
+            {
+                id: 6,
+                text: "How do you share research findings and credit?",
+                options: [
+                    { text: "I publish in academic journals where my name establishes credibility in my field", value: { expert: 2, authority: 1, communityDrain: 2 } },
+                    { text: "I write reports for funders and may share a summary with participants", value: { detachedObserver: 2, communityDrain: 1 } },
+                    { text: "I present findings to the community in accessible formats and ensure they benefit", value: { communityServant: 2, compassionateWitness: 1 } },
+                    { text: "I co-author with community partners and share findings in formats they choose", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 7,
+                text: "When facing institutional deadlines and pressure, how do you balance these with participants' needs?",
+                options: [
+                    { text: "Deadlines are non-negotiable; I work efficiently to get what I need and move on", value: { communityDrain: 3, authority: 1 } },
+                    { text: "I do my best to meet deadlines while trying to be respectful of participants' time", value: { detachedObserver: 2 } },
+                    { text: "I advocate for timeline flexibility when community relationships require more time", value: { compassionateWitness: 2, learner: 1 } },
+                    { text: "I push back on extractive timelines and prioritize community pace, from the start of the project", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 8,
+                text: "How do you handle power dynamics in your research relationships?",
+                options: [
+                    { text: "I'm in charge—my credentials and position give me authority to lead", value: { authority: 3, expert: 2 } },
+                    { text: "I'm aware of power differences but focus on being professional and neutral", value: { detachedObserver: 2, expert: 1 } },
+                    { text: "I actively acknowledge power dynamics and work to minimize harm", value: { compassionateWitness: 2, learner: 1 } },
+                    { text: "I work to redistribute power and center community leadership and decision-making", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 9,
+                text: "What motivates your research or evaluation practice?",
+                options: [
+                    { text: "Publications, career advancement, and establishing my expertise in the field", value: { expert: 2, authority: 2, communityDrain: 1 } },
+                    { text: "Contributing to knowledge and advancing my discipline through rigorous study", value: { expert: 2, detachedObserver: 1 } },
+                    { text: "Understanding social issues and hoping my work might inform positive change", value: { compassionateWitness: 2, learner: 1 } },
+                    { text: "Supporting community-defined goals and working toward justice and liberation", value: { accomplice: 3, communityServant: 2, learner: 1 } }
+                ]
+            },
+            {
+                id: 10,
+                text: "How do you approach 'objectivity' and neutrality in research?",
+                options: [
+                    { text: "I maintain strict objectivity—personal feelings and values shouldn't influence research", value: { detachedObserver: 3, expert: 1 } },
+                    { text: "I strive for objectivity while acknowledging some bias is inevitable", value: { detachedObserver: 2 } },
+                    { text: "I recognize that true neutrality is impossible and I bring my whole self to research", value: { compassionateWitness: 2, learner: 1 } },
+                    { text: "Research isn't neutral—I'm explicit about my values and commitment to justice", value: { accomplice: 3, learner: 1 } }
+                ]
+            },
+            {
+                id: 11,
+                text: "When your research or evaluation reveals challenges in a program or community, how do you respond?",
+                options: [
+                    { text: "I report the findings objectively—it's not my job to fix problems", value: { detachedObserver: 3, expert: 1 } },
+                    { text: "I present findings professionally and may suggest evidence-based solutions", value: { expert: 2, authority: 1 } },
+                    { text: "I work with stakeholders to understand context and collaborate on responses", value: { compassionateWitness: 2, communityServant: 1 } },
+                    { text: "I support the community in using findings to advocate for needed changes and resources", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 12,
+                text: "How do you think about 'giving back' to research participants?",
+                options: [
+                    { text: "A gift card or incentive payment is sufficient compensation for their time", value: { communityDrain: 2, detachedObserver: 1 } },
+                    { text: "I provide professional reports and may present findings to leadership", value: { expert: 2, authority: 1 } },
+                    { text: "I ensure findings are accessible and useful to the community, not just funders", value: { compassionateWitness: 2, communityServant: 2 } },
+                    { text: "I work to ensure research directly benefits participants and advances their goals", value: { accomplice: 3, communityServant: 3, learner: 1 } }
+                ]
+            },
+            {
+                id: 13,
+                text: "You're deep in a project when a funder's deadline suddenly moves up. The team is behind schedule, and your community partners haven't had time to review the instruments. The clock is ticking—what do you do?",
+                options: [
+                    { text: "Push to finish instruments; relationships can be repaired later", value: { communityDrain: 3, authority: 2 } },
+                    { text: "Keep the schedule; one brief check-in before submission", value: { expert: 2, detachedObserver: 1 } },
+                    { text: "Negotiate timeline to create space for trust-building and review", value: { compassionateWitness: 2, learner: 2, communityServant: 1 } },
+                    { text: "Co-decide the pace with partners; your contract already includes time for rest, repair, and mutual care", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 14,
+                text: "In a participant interview, someone shares a painful story—something unexpected and clearly distressing. You feel the weight of their words and the tension between 'protocol' and compassion. What do you do?",
+                options: [
+                    { text: "Note it neutrally and continue your questions", value: { detachedObserver: 3, expert: 1 } },
+                    { text: "Acknowledge briefly but move forward to finish on time", value: { expert: 2, detachedObserver: 1 } },
+                    { text: "Pause, offer resources, and check their consent to continue", value: { compassionateWitness: 3, communityServant: 1 } },
+                    { text: "Follow a co-created harm protocol; offer options to stop, reschedule, or connect to care", value: { accomplice: 3, compassionateWitness: 1 } }
+                ]
+            },
+            {
+                id: 15,
+                text: "The findings are strong, and now it's time to write. The evaluation team is ready to draft the report, but the community collaborators who made it possible haven't been mentioned in authorship discussions. How do you proceed?",
+                options: [
+                    { text: "Academic team only; community is thanked in acknowledgments", value: { expert: 3, authority: 1, communityDrain: 1 } },
+                    { text: "Add acknowledgments but no authorship", value: { learner: 2, expert: 1 } },
+                    { text: "Invite co-authorship; all voices approve final language", value: { compassionateWitness: 2, learner: 2, communityServant: 1 } },
+                    { text: "Community leads decisions on products; co-owns intellectual property; publishing is accessible and shared", value: { accomplice: 3, communityServant: 2 } }
+                ]
+            },
+            {
+                id: 16,
+                text: "Your data analysis reveals tensions between the literature and the lived experiences of community members. Funders expect traditional 'evidence,' but stories and insights challenge those norms. How do you proceed?",
+                options: [
+                    { text: "Literature outweighs participants' narratives", value: { expert: 3, authority: 2 } },
+                    { text: "Present both but privilege the literature in your conclusions", value: { expert: 2, detachedObserver: 1 } },
+                    { text: "Co-interpret tensions with community partners; adjust claims to honor their realities", value: { compassionateWitness: 2, learner: 2, communityServant: 1 } },
+                    { text: "Use participatory sense-making; center counter-narratives and experiential wisdom when they reflect lived truth", value: { accomplice: 3, learner: 2 } }
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let answers = {};
+        let userName = '';
+        let scores = {
+            communityDrain: 0,
+            detachedObserver: 0,
+            authority: 0,
+            expert: 0,
+            learner: 0,
+            compassionateWitness: 0,
+            accomplice: 0,
+            communityServant: 0
+        };
+
+        const roleDescriptions = {
+            communityDrain: {
+                name: "Community Drain",
+                approach: "Extractive",
+                description: "This role involves gathering data from communities without meaningful reciprocity or consideration of what remains after researchers leave. The focus is on meeting research needs rather than community needs.",
+                reflection: "Consider: How can you ensure that communities benefit from your research? What would true reciprocity look like in your work?"
+            },
+            detachedObserver: {
+                name: "Detached Observer",
+                approach: "Extractive",
+                description: "This role emphasizes neutrality and distance, treating research participants as subjects to be studied rather than people to connect with. It assumes that detachment equals validity.",
+                reflection: "Consider: What relationships and insights might you be missing by maintaining distance? How might bringing your full humanity enhance rather than diminish your work?"
+            },
+            authority: {
+                name: "Authority",
+                approach: "Extractive",
+                description: "This role relies on positional power and credentials to assert control over research processes. It assumes researchers should be trusted and respected simply because of their position or degree.",
+                reflection: "Consider: How might your authority create barriers to authentic partnership? What would it mean to share or redistribute power in your research?"
+            },
+            expert: {
+                name: "Expert",
+                approach: "Extractive",
+                description: "This role privileges academic knowledge over lived experience, creating a false division between those with credentials and those without. It assumes that degrees and training make one the expert, regardless of participants' knowledge.",
+                reflection: "Consider: What expertise do participants bring that your training cannot provide? How can you honor both academic and experiential knowledge?"
+            },
+            learner: {
+                name: "Learner",
+                approach: "Liberatory",
+                description: "This role approaches research with humility and curiosity, recognizing that participants are experts in their own lives and experiences. It prioritizes learning from community members rather than studying them.",
+                reflection: "Celebrate: You're embracing humility in your work. Continue to center participant knowledge and remain open to what you don't know."
+            },
+            compassionateWitness: {
+                name: "Compassionate Witness",
+                approach: "Liberatory",
+                description: "This role involves showing up with empathy and humanity, truly seeing and honoring participants' experiences. It recognizes that sometimes the most important work is simply bearing witness with compassion.",
+                reflection: "Celebrate: You're bringing your full humanity to research. Continue to practice deep listening and presence with the communities you serve."
+            },
+            accomplice: {
+                name: "Accomplice",
+                approach: "Liberatory",
+                description: "This role goes beyond allyship to actively work alongside communities in pursuit of their goals, even at personal risk or cost. It means using privilege and position to support community-led change.",
+                reflection: "Celebrate: You're taking action beyond observation. Continue to show up in solidarity and be willing to take risks for the communities you work with."
+            },
+            communityServant: {
+                name: "Community Servant",
+                approach: "Liberatory",
+                description: "This role centers community needs and priorities above personal or institutional advancement. It means using skills and resources in service to community-defined goals and ensuring that research benefits participants.",
+                reflection: "Celebrate: You're centering community needs in your work. Continue to ensure that those who are the source of your data are also its beneficiaries."
+            }
+        };
+
+        function startQuiz() {
+            // Capture user name
+            const nameInput = document.getElementById('userName');
+            userName = nameInput.value.trim() || 'Your';
+            
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('quiz-content').style.display = 'block';
+            document.getElementById('total-questions').textContent = questions.length;
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const question = questions[currentQuestion];
+            const questionsContainer = document.getElementById('questions');
+            
+            const selectedOptions = answers[currentQuestion] || [];
+            
+            // Randomize options for questions 1-12 only (indices 0-11)
+            let optionsToDisplay = question.options;
+            let optionIndices = question.options.map((_, index) => index);
+            
+            if (currentQuestion < 12) {
+                // Create array of indices and shuffle them
+                if (!question.shuffledIndices) {
+                    question.shuffledIndices = [...optionIndices];
+                    // Fisher-Yates shuffle
+                    for (let i = question.shuffledIndices.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [question.shuffledIndices[i], question.shuffledIndices[j]] = 
+                        [question.shuffledIndices[j], question.shuffledIndices[i]];
+                    }
+                }
+                // Use shuffled order
+                optionIndices = question.shuffledIndices;
+            }
+            
+            let optionsHTML = '';
+            optionIndices.forEach((originalIndex) => {
+                const option = question.options[originalIndex];
+                const isSelected = selectedOptions.includes(originalIndex);
+                const isDisabled = !isSelected && selectedOptions.length >= 2;
+                optionsHTML += `
+                    <label class="option ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" onclick="${isDisabled ? '' : `selectOption(${originalIndex})`}">
+                        <input type="checkbox" 
+                               name="q${currentQuestion}" 
+                               value="${originalIndex}" 
+                               ${isSelected ? 'checked' : ''} 
+                               ${isDisabled ? 'disabled' : ''}
+                               onchange="selectOption(${originalIndex})">
+                        <span>${option.text}</span>
+                    </label>
+                `;
+            });
+
+            questionsContainer.innerHTML = `
+                <div class="question-container active">
+                    <div class="question">
+                        <h3>${currentQuestion + 1}. <strong>${question.text}</strong></h3>
+                    </div>
+                    <div class="options">
+                        ${optionsHTML}
+                    </div>
+                </div>
+            `;
+
+            updateProgress();
+            updateSelectionCount();
+            updateButtons();
+        }
+
+        function selectOption(optionIndex) {
+            if (!answers[currentQuestion]) {
+                answers[currentQuestion] = [];
+            }
+            
+            const selectedOptions = answers[currentQuestion];
+            const indexPos = selectedOptions.indexOf(optionIndex);
+            
+            if (indexPos > -1) {
+                // Deselect
+                selectedOptions.splice(indexPos, 1);
+            } else {
+                // Select (if not already at max)
+                if (selectedOptions.length < 2) {
+                    selectedOptions.push(optionIndex);
+                }
+            }
+            
+            renderQuestion();
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('current-question').textContent = currentQuestion + 1;
+        }
+
+        function updateSelectionCount() {
+            const selectedCount = (answers[currentQuestion] || []).length;
+            const countElement = document.getElementById('selection-count');
+            
+            if (selectedCount === 0) {
+                countElement.textContent = 'Select 1-2 options that resonate with you';
+                countElement.style.color = '#7d4e8d';
+            } else if (selectedCount === 1) {
+                countElement.textContent = '✓ 1 selected (you can select 1 more if desired)';
+                countElement.style.color = '#2c7873';
+            } else {
+                countElement.textContent = '✓ 2 selected (maximum reached)';
+                countElement.style.color = '#2c7873';
+            }
+        }
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+
+            prevBtn.disabled = currentQuestion === 0;
+            
+            const selectedCount = (answers[currentQuestion] || []).length;
+            const isAnswered = selectedCount >= 1;
+            nextBtn.disabled = !isAnswered;
+
+            if (currentQuestion === questions.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = isAnswered ? 'block' : 'none';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function calculateResults() {
+            // Calculate scores based on answers
+            Object.keys(answers).forEach(questionIndex => {
+                const question = questions[questionIndex];
+                const selectedOptionIndices = answers[questionIndex];
+                
+                selectedOptionIndices.forEach(optionIndex => {
+                    const selectedOption = question.options[optionIndex];
+                    
+                    Object.keys(selectedOption.value).forEach(role => {
+                        scores[role] += selectedOption.value[role];
+                    });
+                });
+            });
+
+            // Find dominant roles
+            const sortedRoles = Object.keys(scores)
+                .map(role => ({ role, score: scores[role] }))
+                .filter(item => item.score > 0)
+                .sort((a, b) => b.score - a.score);
+
+            displayResults(sortedRoles);
+        }
+
+        function displayResults(sortedRoles) {
+            document.getElementById('quiz-content').style.display = 'none';
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.classList.add('active');
+
+            const extractiveRoles = sortedRoles.filter(r => 
+                ['communityDrain', 'detachedObserver', 'authority', 'expert'].includes(r.role)
+            );
+            const liberatoryRoles = sortedRoles.filter(r => 
+                ['learner', 'compassionateWitness', 'accomplice', 'communityServant'].includes(r.role)
+            );
+
+            const totalExtractive = extractiveRoles.reduce((sum, r) => sum + r.score, 0);
+            const totalLiberatory = liberatoryRoles.reduce((sum, r) => sum + r.score, 0);
+            const total = totalExtractive + totalLiberatory;
+
+            const extractivePercent = Math.round((totalExtractive / total) * 100);
+            const liberatoryPercent = Math.round((totalLiberatory / total) * 100);
+
+            const primaryRole = sortedRoles[0];
+            const secondaryRole = sortedRoles[1];
+
+            let resultsHTML = `
+                <h2 style="color: #2c7873; margin-bottom: 25px;">${userName}'s Research Role Profile</h2>
+                
+                <div class="visual-results-container">
+                    <h3>${userName}'s Role Distribution</h3>
+                    <canvas id="rolesCanvas" width="600" height="600"></canvas>
+                    <p class="canvas-subtitle">Inner ring shows extractive vs liberatory balance. Outer ring shows individual role strengths.</p>
+                </div>
+                
+                <div class="spectrum-chart">
+                    <h3 style="margin-bottom: 20px;">${userName}'s Position on the Spectrum</h3>
+                    <div class="spectrum-visual">
+                        <div class="spectrum-extractive" style="width: ${extractivePercent}%;">
+                            ${extractivePercent}% Extractive
+                        </div>
+                        <div class="spectrum-liberatory" style="width: ${liberatoryPercent}%;">
+                            ${liberatoryPercent}% Liberatory
+                        </div>
+                    </div>
+                    <p style="color: #666; line-height: 1.7;">
+                        Remember: We all move along this spectrum and often embody multiple roles simultaneously. 
+                        This isn't about judgment—it's about awareness. Recognizing where you are is the first step 
+                        toward intentional growth and liberatory practice.
+                    </p>
+                </div>
+
+                <h3 style="margin: 30px 0 20px 0; color: #333;">${userName}'s Primary & Secondary Roles</h3>
+            `;
+
+            // Display primary role
+            if (primaryRole) {
+                const roleInfo = roleDescriptions[primaryRole.role];
+                const maxScore = questions.length * 6; // Maximum possible score with 2 selections
+                const percentage = Math.round((primaryRole.score / maxScore) * 100);
+                const isLiberatory = roleInfo.approach === "Liberatory";
+
+                resultsHTML += `
+                    <div class="role-result primary ${isLiberatory ? 'liberatory' : 'extractive'}">
+                        <h3>
+                            ${roleInfo.name}
+                            <span class="role-badge primary">Primary Role</span>
+                        </h3>
+                        <div class="score" style="color: ${isLiberatory ? '#2c7873' : '#9b6b8f'};">
+                            Strength: ${percentage}% | Approach: ${roleInfo.approach}
+                        </div>
+                        <p><strong>What this means:</strong> ${roleInfo.description}</p>
+                        <p style="margin-top: 12px; font-style: italic;"><strong>${roleInfo.reflection}</strong></p>
+                    </div>
+                `;
+            }
+
+            // Display secondary role
+            if (secondaryRole) {
+                const roleInfo = roleDescriptions[secondaryRole.role];
+                const maxScore = questions.length * 6;
+                const percentage = Math.round((secondaryRole.score / maxScore) * 100);
+                const isLiberatory = roleInfo.approach === "Liberatory";
+
+                resultsHTML += `
+                    <div class="role-result ${isLiberatory ? 'liberatory' : 'extractive'}">
+                        <h3>
+                            ${roleInfo.name}
+                            <span class="role-badge secondary">Secondary Role</span>
+                        </h3>
+                        <div class="score" style="color: ${isLiberatory ? '#2c7873' : '#9b6b8f'};">
+                            Strength: ${percentage}% | Approach: ${roleInfo.approach}
+                        </div>
+                        <p><strong>What this means:</strong> ${roleInfo.description}</p>
+                        <p style="margin-top: 12px; font-style: italic;"><strong>${roleInfo.reflection}</strong></p>
+                    </div>
+                `;
+            }
+
+            resultsHTML += `
+                <div class="reflection">
+                    <h4>Reflection Questions for Your Journey</h4>
+                    <ul>
+                        <li>How do your primary and secondary roles work together in your research practice?</li>
+                        <li>When do you find yourself embodying each of these roles most strongly?</li>
+                        <li>What opportunities exist for you to move toward more liberatory roles?</li>
+                        <li>What institutional constraints or pressures influence which roles you take on?</li>
+                        <li>What would it take for you to embody more liberatory roles in your next project?</li>
+                        <li>Who in your research community can support you in this growth?</li>
+                    </ul>
+                </div>
+
+                <div class="download-section">
+                    <h4>Save Your Results</h4>
+                    <p>Download a PDF copy of your personalized results to reflect on your journey and share with colleagues or mentors.</p>
+                    <button class="btn-primary btn-download" onclick="generatePDF()">
+                        <span>📥</span> Download My Results as PDF
+                    </button>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-top: 30px; text-align: center;">
+                    <h4 style="margin-bottom: 15px;">Continue Your Learning</h4>
+                    <p style="line-height: 1.7; color: #555; margin-bottom: 20px;">
+                        This quiz is just the beginning. Approach your research with humility and curiosity. 
+                        Make conclusions informed by more than your academic training. Ensure those who are 
+                        the source of your data are also its beneficiaries.
+                    </p>
+                    <p style="font-size: 0.9em; color: #666;">
+                        Based on "Critical Examination of Our Roles in Research" by Dr. Zuri Tau<br>
+                        <a href="https://www.LiberatoryResearch.org" style="color: #2c7873;">LiberatoryResearch.org</a>
+                    </p>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn-primary" onclick="location.reload()">Take Quiz Again</button>
+                </div>
+            `;
+
+            resultsContainer.innerHTML = resultsHTML;
+            
+            // Draw the sunburst chart after a short delay to ensure canvas is rendered
+            setTimeout(() => drawRolesVisualization(), 100);
+        }
+
+        function drawRolesVisualization() {
+            const canvas = document.getElementById('rolesCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            const innerRadius = 60;
+            const middleRadius = 150;
+            const outerRadius = 230;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Group roles by approach with salmon colors for extractive, teal for liberatory
+            const extractiveRoles = {
+                'communityDrain': { value: scores.communityDrain, color: '#9b6b8f' },
+                'detachedObserver': { value: scores.detachedObserver, color: '#b084a6' },
+                'authority': { value: scores.authority, color: '#8a5880' },
+                'expert': { value: scores.expert, color: '#c59fbb' }
+            };
+            
+            const liberatoryRoles = {
+                'learner': { value: scores.learner, color: '#2c7873' },
+                'compassionateWitness': { value: scores.compassionateWitness, color: '#4aa699' },
+                'accomplice': { value: scores.accomplice, color: '#1a5653' },
+                'communityServant': { value: scores.communityServant, color: '#62bab0' }
+            };
+            
+            // Calculate totals
+            const extractiveTotal = Object.values(extractiveRoles).reduce((sum, r) => sum + r.value, 0);
+            const liberatoryTotal = Object.values(liberatoryRoles).reduce((sum, r) => sum + r.value, 0);
+            const grandTotal = extractiveTotal + liberatoryTotal;
+            
+            if (grandTotal === 0) return;
+            
+            const extractivePercent = extractiveTotal / grandTotal;
+            const liberatoryPercent = liberatoryTotal / grandTotal;
+            
+            let currentAngle = -Math.PI / 2; // Start at top
+            
+            // Draw INNER RING - Extractive
+            const extractiveAngle = extractivePercent * Math.PI * 2;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, middleRadius, currentAngle, currentAngle + extractiveAngle);
+            ctx.arc(centerX, centerY, innerRadius, currentAngle + extractiveAngle, currentAngle, true);
+            ctx.closePath();
+            
+            const extractiveGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, middleRadius);
+            extractiveGradient.addColorStop(0, '#b084a6');
+            extractiveGradient.addColorStop(1, '#9b6b8f');
+            ctx.fillStyle = extractiveGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Label for extractive inner ring
+            const extractiveMidAngle = currentAngle + extractiveAngle / 2;
+            const extractiveLabelRadius = (innerRadius + middleRadius) / 2;
+            const extractiveLabelX = centerX + Math.cos(extractiveMidAngle) * extractiveLabelRadius;
+            const extractiveLabelY = centerY + Math.sin(extractiveMidAngle) * extractiveLabelRadius;
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('EXTRACTIVE', extractiveLabelX, extractiveLabelY - 6);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`${Math.round(extractivePercent * 100)}%`, extractiveLabelX, extractiveLabelY + 10);
+            
+            // Draw OUTER RING - Extractive roles
+            let outerAngle = currentAngle;
+            Object.entries(extractiveRoles).forEach(([roleKey, info]) => {
+                const rolePercent = info.value / grandTotal;
+                const roleAngle = rolePercent * Math.PI * 2;
+                
+                if (roleAngle === 0) return;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, outerAngle, outerAngle + roleAngle);
+                ctx.arc(centerX, centerY, middleRadius, outerAngle + roleAngle, outerAngle, true);
+                ctx.closePath();
+                
+                ctx.fillStyle = info.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Label for outer segment - smart positioning
+                const roleMidAngle = outerAngle + roleAngle / 2;
+                const segmentWidth = roleAngle;
+                const isSmallSegment = segmentWidth < 0.4;
+                
+                let roleLabelRadius, fontSize, labelFontSize;
+                if (isSmallSegment) {
+                    roleLabelRadius = outerRadius + 40;
+                    fontSize = 9;
+                    labelFontSize = 11;
+                    ctx.fillStyle = '#333';
+                } else {
+                    roleLabelRadius = (middleRadius + outerRadius) / 2;
+                    fontSize = 11;
+                    labelFontSize = 14;
+                    ctx.fillStyle = '#fff';
+                }
+                
+                const roleLabelX = centerX + Math.cos(roleMidAngle) * roleLabelRadius;
+                const roleLabelY = centerY + Math.sin(roleMidAngle) * roleLabelRadius;
+                
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Get role name from roleDescriptions
+                const roleName = roleDescriptions[roleKey].name;
+                const words = roleName.split(' ');
+                words.forEach((word, index) => {
+                    ctx.fillText(word, roleLabelX, roleLabelY - 10 + index * 11);
+                });
+                ctx.font = `bold ${labelFontSize}px Arial`;
+                const percentage = Math.round((info.value / grandTotal) * 100);
+                ctx.fillText(`${percentage}%`, roleLabelX, roleLabelY + 6 + (words.length - 1) * 11);
+                
+                // Draw connecting line for outside labels
+                if (isSmallSegment) {
+                    const lineStartRadius = outerRadius + 5;
+                    const lineStartX = centerX + Math.cos(roleMidAngle) * lineStartRadius;
+                    const lineStartY = centerY + Math.sin(roleMidAngle) * lineStartRadius;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(lineStartX, lineStartY);
+                    ctx.lineTo(roleLabelX, roleLabelY);
+                    ctx.strokeStyle = '#999';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+                
+                outerAngle += roleAngle;
+            });
+            
+            currentAngle += extractiveAngle;
+            
+            // Draw INNER RING - Liberatory
+            const liberatoryAngle = liberatoryPercent * Math.PI * 2;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, middleRadius, currentAngle, currentAngle + liberatoryAngle);
+            ctx.arc(centerX, centerY, innerRadius, currentAngle + liberatoryAngle, currentAngle, true);
+            ctx.closePath();
+            
+            const liberatoryGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, middleRadius);
+            liberatoryGradient.addColorStop(0, '#4aa699');
+            liberatoryGradient.addColorStop(1, '#2c7873');
+            ctx.fillStyle = liberatoryGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Label for liberatory inner ring
+            const liberatoryMidAngle = currentAngle + liberatoryAngle / 2;
+            const liberatoryLabelRadius = (innerRadius + middleRadius) / 2;
+            const liberatoryLabelX = centerX + Math.cos(liberatoryMidAngle) * liberatoryLabelRadius;
+            const liberatoryLabelY = centerY + Math.sin(liberatoryMidAngle) * liberatoryLabelRadius;
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('LIBERATORY', liberatoryLabelX, liberatoryLabelY - 6);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`${Math.round(liberatoryPercent * 100)}%`, liberatoryLabelX, liberatoryLabelY + 10);
+            
+            // Draw OUTER RING - Liberatory roles
+            outerAngle = currentAngle;
+            Object.entries(liberatoryRoles).forEach(([roleKey, info]) => {
+                const rolePercent = info.value / grandTotal;
+                const roleAngle = rolePercent * Math.PI * 2;
+                
+                if (roleAngle === 0) return;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, outerAngle, outerAngle + roleAngle);
+                ctx.arc(centerX, centerY, middleRadius, outerAngle + roleAngle, outerAngle, true);
+                ctx.closePath();
+                
+                ctx.fillStyle = info.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Label for outer segment - smart positioning
+                const roleMidAngle = outerAngle + roleAngle / 2;
+                const segmentWidth = roleAngle;
+                const isSmallSegment = segmentWidth < 0.4;
+                
+                let roleLabelRadius, fontSize, labelFontSize;
+                if (isSmallSegment) {
+                    roleLabelRadius = outerRadius + 40;
+                    fontSize = 9;
+                    labelFontSize = 11;
+                    ctx.fillStyle = '#333';
+                } else {
+                    roleLabelRadius = (middleRadius + outerRadius) / 2;
+                    fontSize = 11;
+                    labelFontSize = 14;
+                    ctx.fillStyle = '#fff';
+                }
+                
+                const roleLabelX = centerX + Math.cos(roleMidAngle) * roleLabelRadius;
+                const roleLabelY = centerY + Math.sin(roleMidAngle) * roleLabelRadius;
+                
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Get role name from roleDescriptions
+                const roleName = roleDescriptions[roleKey].name;
+                const words = roleName.split(' ');
+                words.forEach((word, index) => {
+                    ctx.fillText(word, roleLabelX, roleLabelY - 10 + index * 11);
+                });
+                ctx.font = `bold ${labelFontSize}px Arial`;
+                const percentage = Math.round((info.value / grandTotal) * 100);
+                ctx.fillText(`${percentage}%`, roleLabelX, roleLabelY + 6 + (words.length - 1) * 11);
+                
+                // Draw connecting line for outside labels
+                if (isSmallSegment) {
+                    const lineStartRadius = outerRadius + 5;
+                    const lineStartX = centerX + Math.cos(roleMidAngle) * lineStartRadius;
+                    const lineStartY = centerY + Math.sin(roleMidAngle) * lineStartRadius;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(lineStartX, lineStartY);
+                    ctx.lineTo(roleLabelX, roleLabelY);
+                    ctx.strokeStyle = '#999';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+                
+                outerAngle += roleAngle;
+            });
+            
+            // Draw center circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#1a5653';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Center text with user name
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            
+            // Truncate name if too long
+            let displayName = userName === 'Your' ? 'YOUR' : userName;
+            if (displayName.length > 12) {
+                displayName = displayName.substring(0, 12) + '...';
+            }
+            
+            ctx.fillText(displayName.toUpperCase(), centerX, centerY - 8);
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('PROFILE', centerX, centerY + 8);
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Get results data
+            const sortedRoles = Object.keys(scores)
+                .map(role => ({ role, score: scores[role] }))
+                .filter(item => item.score > 0)
+                .sort((a, b) => b.score - a.score);
+            
+            const extractiveRoles = sortedRoles.filter(r => 
+                ['communityDrain', 'detachedObserver', 'authority', 'expert'].includes(r.role)
+            );
+            const liberatoryRoles = sortedRoles.filter(r => 
+                ['learner', 'compassionateWitness', 'accomplice', 'communityServant'].includes(r.role)
+            );
+            
+            const totalExtractive = extractiveRoles.reduce((sum, r) => sum + r.score, 0);
+            const totalLiberatory = liberatoryRoles.reduce((sum, r) => sum + r.score, 0);
+            const total = totalExtractive + totalLiberatory;
+            
+            const extractivePercent = Math.round((totalExtractive / total) * 100);
+            const liberatoryPercent = Math.round((totalLiberatory / total) * 100);
+            
+            const primaryRole = sortedRoles[0];
+            const secondaryRole = sortedRoles[1];
+            
+            // Set up PDF styling
+            let yPos = 20;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 20;
+            const contentWidth = pageWidth - (margin * 2);
+            
+            // Header
+            doc.setFillColor(44, 120, 115); // Teal
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont(undefined, 'bold');
+            doc.text('Your Research Role Profile', pageWidth / 2, 25, { align: 'center' });
+            
+            yPos = 50;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const dateStr = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            doc.text(`Completed: ${dateStr}`, pageWidth / 2, yPos, { align: 'center' });
+            
+            // Spectrum Section
+            yPos += 15;
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('Your Position on the Spectrum', margin, yPos);
+            
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            
+            // Draw spectrum bar
+            const barHeight = 20;
+            const extractiveWidth = (extractivePercent / 100) * contentWidth;
+            const liberatoryWidth = (liberatoryPercent / 100) * contentWidth;
+            
+            // Extractive portion (salmon)
+            doc.setFillColor(212, 117, 108);
+            doc.rect(margin, yPos, extractiveWidth, barHeight, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text(`${extractivePercent}% Extractive`, margin + extractiveWidth / 2, yPos + 12, { align: 'center' });
+            
+            // Liberatory portion (teal)
+            doc.setFillColor(44, 120, 115);
+            doc.rect(margin + extractiveWidth, yPos, liberatoryWidth, barHeight, 'F');
+            doc.text(`${liberatoryPercent}% Liberatory`, margin + extractiveWidth + liberatoryWidth / 2, yPos + 12, { align: 'center' });
+            
+            yPos += 35;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(9);
+            const spectrumNote = doc.splitTextToSize(
+                'Remember: We all move along this spectrum and often embody multiple roles simultaneously. This isn\'t about judgment—it\'s about awareness.',
+                contentWidth
+            );
+            doc.text(spectrumNote, margin, yPos);
+            yPos += spectrumNote.length * 5 + 10;
+            
+            // Primary Role
+            if (primaryRole) {
+                const roleInfo = roleDescriptions[primaryRole.role];
+                const maxScore = questions.length * 6;
+                const percentage = Math.round((primaryRole.score / maxScore) * 100);
+                const isLiberatory = roleInfo.approach === "Liberatory";
+                
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(isLiberatory ? 44 : 212, isLiberatory ? 120 : 117, isLiberatory ? 115 : 108);
+                doc.text(`PRIMARY ROLE: ${roleInfo.name}`, margin, yPos);
+                
+                yPos += 8;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Strength: ${percentage}% | Approach: ${roleInfo.approach}`, margin, yPos);
+                
+                yPos += 8;
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                const descText = doc.splitTextToSize(roleInfo.description, contentWidth);
+                doc.text(descText, margin, yPos);
+                yPos += descText.length * 5 + 5;
+                
+                doc.setFont(undefined, 'italic');
+                const reflectionText = doc.splitTextToSize(roleInfo.reflection, contentWidth);
+                doc.text(reflectionText, margin, yPos);
+                yPos += reflectionText.length * 5 + 15;
+            }
+            
+            // Secondary Role
+            if (secondaryRole && yPos < 250) {
+                const roleInfo = roleDescriptions[secondaryRole.role];
+                const maxScore = questions.length * 6;
+                const percentage = Math.round((secondaryRole.score / maxScore) * 100);
+                const isLiberatory = roleInfo.approach === "Liberatory";
+                
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(isLiberatory ? 44 : 212, isLiberatory ? 120 : 117, isLiberatory ? 115 : 108);
+                doc.text(`SECONDARY ROLE: ${roleInfo.name}`, margin, yPos);
+                
+                yPos += 8;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Strength: ${percentage}% | Approach: ${roleInfo.approach}`, margin, yPos);
+                
+                yPos += 8;
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                const descText = doc.splitTextToSize(roleInfo.description, contentWidth);
+                doc.text(descText, margin, yPos);
+                yPos += descText.length * 5 + 5;
+                
+                doc.setFont(undefined, 'italic');
+                const reflectionText = doc.splitTextToSize(roleInfo.reflection, contentWidth);
+                doc.text(reflectionText, margin, yPos);
+                yPos += reflectionText.length * 5 + 15;
+            }
+            
+            // Add new page if needed for reflection questions
+            if (yPos > 240) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            // Reflection Questions
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(139, 115, 85); // Gold/brown
+            doc.text('Reflection Questions for Your Journey', margin, yPos);
+            
+            yPos += 8;
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            
+            const questions = [
+                'How do your primary and secondary roles work together in your research practice?',
+                'When do you find yourself embodying each of these roles most strongly?',
+                'What opportunities exist for you to move toward more liberatory roles?',
+                'What institutional constraints or pressures influence which roles you take on?',
+                'What would it take for you to embody more liberatory roles in your next project?',
+                'Who in your research community can support you in this growth?'
+            ];
+            
+            questions.forEach((question, index) => {
+                const questionText = doc.splitTextToSize(`${index + 1}. ${question}`, contentWidth - 5);
+                doc.text(questionText, margin + 5, yPos);
+                yPos += questionText.length * 5 + 3;
+            });
+            
+            // Footer on last page
+            yPos = doc.internal.pageSize.getHeight() - 30;
+            doc.setFillColor(248, 249, 250);
+            doc.rect(0, yPos - 5, pageWidth, 35, 'F');
+            doc.setFontSize(9);
+            doc.setTextColor(102, 102, 102);
+            doc.setFont(undefined, 'italic');
+            doc.text('Based on "Critical Examination of Our Roles in Research"', pageWidth / 2, yPos + 5, { align: 'center' });
+            doc.text('by Dr. Zuri Tau', pageWidth / 2, yPos + 10, { align: 'center' });
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(44, 120, 115);
+            doc.text('www.LiberatoryResearch.org', pageWidth / 2, yPos + 18, { align: 'center' });
+            
+            // Save the PDF
+            doc.save('My-Research-Role-Profile.pdf');
+        }
+    </script>
+</body>
+</html>
